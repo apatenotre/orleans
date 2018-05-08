@@ -87,6 +87,8 @@ namespace Orleans.Tests.SqlUtils
         /// </summary>
         internal string DeleteMembershipTableEntriesKey => queries[nameof(DeleteMembershipTableEntriesKey)];
 
+        internal string InsertGossipConfigurationKey => queries[nameof(InsertGossipConfigurationKey)];
+
 #endif
 
 #if REMINDERS_ADONET || TESTER_SQLUTILS
@@ -420,6 +422,21 @@ namespace Orleans.Tests.SqlUtils
                         : string.Join("|", value.Select(
                             s => $"{s.Item1.ToParsableString()},{LogFormatter.PrintDate(s.Item2)}")));
                 }
+            }
+
+            internal string Comment
+            {
+                set { Add(nameof(Comment), value); }
+            }
+
+            internal List<string> Clusters
+            {
+                set { Add(nameof(Clusters), string.Join(",", value)); }
+            }
+
+            internal DateTime TimeStamp
+            {
+                set { Add(nameof(TimeStamp), value); }
             }
         }
     }

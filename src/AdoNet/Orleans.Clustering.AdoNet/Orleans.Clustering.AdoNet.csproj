@@ -34,10 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Storage\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="MySQL-Clustering.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Pack>true</Pack>

@@ -253,3 +253,28 @@ VALUES
     DELETE FROM OrleansMembershipVersionTable
     WHERE DeploymentId = @DeploymentId AND @DeploymentId IS NOT NULL;
 ');
+
+INSERT INTO OlreansQuery(QueryKey, QueryText)
+VALUES
+(
+    'InsertGossipConfigurationKey','
+     INSERT INTO OrleansGossipConfigurationTable
+     (
+		ServiceId,
+		Comment,
+		Clusters,
+		Version,
+		TimeStamp
+     )
+     SELECT * FROM ( SELECT @ServiceId ) AS TMP
+     WHERE NOT EXISTS
+     (
+     SELECT 1
+     FROM
+         OrleansMembershipVersionTable
+     WHERE
+         ServiceId = @ServiceId AND @ServiceId IS NOT NULL
+     );
+ 
+     SELECT ROW_COUNT();
+');

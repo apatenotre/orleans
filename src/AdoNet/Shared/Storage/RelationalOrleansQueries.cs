@@ -1,10 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Orleans.MultiCluster;
 using Orleans.Runtime;
+using Orleans.Runtime.MultiClusterNetwork;
 
 #if CLUSTERING_ADONET
 namespace Orleans.Clustering.AdoNet.Storage
@@ -38,10 +40,10 @@ namespace Orleans.Tests.SqlUtils
             DbStoredQueries.Columns.Statistic
         };
 
-    /// <summary>
-    /// the orleans functional queries
-    /// </summary>
-    private readonly DbStoredQueries dbStoredQueries;
+        /// <summary>
+        /// the orleans functional queries
+        /// </summary>
+        private readonly DbStoredQueries dbStoredQueries;
 
         private readonly IGrainReferenceConverter grainReferenceConverter;
 
@@ -87,15 +89,15 @@ namespace Orleans.Tests.SqlUtils
             var ret = await storage.ReadAsync(query, selector, command => parameterProvider(command));
             return aggregator(ret);
         }
-        
+
 #if REMINDERS_ADONET || TESTER_SQLUTILS
 
-        /// <summary>
-        /// Reads Orleans reminder data from the tables.
-        /// </summary>
-        /// <param name="serviceId">The service ID.</param>
-        /// <param name="grainRef">The grain reference (ID).</param>
-        /// <returns>Reminder table data.</returns>
+/// <summary>
+/// Reads Orleans reminder data from the tables.
+/// </summary>
+/// <param name="serviceId">The service ID.</param>
+/// <param name="grainRef">The grain reference (ID).</param>
+/// <returns>Reminder table data.</returns>
         internal Task<ReminderTableData> ReadReminderRowsAsync(string serviceId, GrainReference grainRef)
         {
             return ReadAsync(dbStoredQueries.ReadReminderRowsKey, record => DbStoredQueries.Converters.GetReminderEntry(record, this.grainReferenceConverter), command =>
@@ -208,7 +210,7 @@ namespace Orleans.Tests.SqlUtils
         internal Task<List<Uri>> ActiveGatewaysAsync(string deploymentId)
         {
             return ReadAsync(dbStoredQueries.GatewaysQueryKey, DbStoredQueries.Converters.GetGatewayUri, command =>
-                new DbStoredQueries.Columns(command) { DeploymentId = deploymentId, Status = SiloStatus.Active },
+                    new DbStoredQueries.Columns(command) { DeploymentId = deploymentId, Status = SiloStatus.Active },
                 ret => ret.ToList());
         }
 
@@ -221,7 +223,7 @@ namespace Orleans.Tests.SqlUtils
         internal Task<MembershipTableData> MembershipReadRowAsync(string deploymentId, SiloAddress siloAddress)
         {
             return ReadAsync(dbStoredQueries.MembershipReadRowKey, DbStoredQueries.Converters.GetMembershipEntry, command =>
-                new DbStoredQueries.Columns(command) { DeploymentId = deploymentId, SiloAddress = siloAddress },
+                    new DbStoredQueries.Columns(command) { DeploymentId = deploymentId, SiloAddress = siloAddress },
                 ConvertToMembershipTableData);
         }
 
@@ -233,7 +235,7 @@ namespace Orleans.Tests.SqlUtils
         internal Task<MembershipTableData> MembershipReadAllAsync(string deploymentId)
         {
             return ReadAsync(dbStoredQueries.MembershipReadAllKey, DbStoredQueries.Converters.GetMembershipEntry, command =>
-                new DbStoredQueries.Columns(command) { DeploymentId = deploymentId }, ConvertToMembershipTableData);
+                    new DbStoredQueries.Columns(command) { DeploymentId = deploymentId }, ConvertToMembershipTableData);
         }
 
         /// <summary>
@@ -273,7 +275,7 @@ namespace Orleans.Tests.SqlUtils
         internal Task<bool> InsertMembershipVersionRowAsync(string deploymentId)
         {
             return ReadAsync(dbStoredQueries.InsertMembershipVersionKey, DbStoredQueries.Converters.GetSingleBooleanValue, command =>
-                new DbStoredQueries.Columns(command) { DeploymentId = deploymentId }, ret => ret.First());
+                    new DbStoredQueries.Columns(command) { DeploymentId = deploymentId }, ret => ret.First());
         }
 
         /// <summary>
@@ -287,18 +289,18 @@ namespace Orleans.Tests.SqlUtils
             string etag)
         {
             return ReadAsync(dbStoredQueries.InsertMembershipKey, DbStoredQueries.Converters.GetSingleBooleanValue, command =>
-                new DbStoredQueries.Columns(command)
-                {
-                    DeploymentId = deploymentId,
-                    IAmAliveTime = membershipEntry.IAmAliveTime,
-                    SiloName = membershipEntry.SiloName,
-                    HostName = membershipEntry.HostName,
-                    SiloAddress = membershipEntry.SiloAddress,
-                    StartTime = membershipEntry.StartTime,
-                    Status = membershipEntry.Status,
-                    ProxyPort = membershipEntry.ProxyPort,
-                    Version = etag
-                }, ret => ret.First());
+                    new DbStoredQueries.Columns(command)
+                    {
+                        DeploymentId = deploymentId,
+                        IAmAliveTime = membershipEntry.IAmAliveTime,
+                        SiloName = membershipEntry.SiloName,
+                        HostName = membershipEntry.HostName,
+                        SiloAddress = membershipEntry.SiloAddress,
+                        StartTime = membershipEntry.StartTime,
+                        Status = membershipEntry.Status,
+                        ProxyPort = membershipEntry.ProxyPort,
+                        Version = etag
+                    }, ret => ret.First());
         }
 
         /// <summary>
@@ -312,15 +314,15 @@ namespace Orleans.Tests.SqlUtils
             string etag)
         {
             return ReadAsync(dbStoredQueries.UpdateMembershipKey, DbStoredQueries.Converters.GetSingleBooleanValue, command =>
-                new DbStoredQueries.Columns(command)
-                {
-                    DeploymentId = deploymentId,
-                    SiloAddress = membershipEntry.SiloAddress,
-                    IAmAliveTime = membershipEntry.IAmAliveTime,
-                    Status = membershipEntry.Status,
-                    SuspectTimes = membershipEntry.SuspectTimes,
-                    Version = etag
-                }, ret => ret.First());
+                    new DbStoredQueries.Columns(command)
+                    {
+                        DeploymentId = deploymentId,
+                        SiloAddress = membershipEntry.SiloAddress,
+                        IAmAliveTime = membershipEntry.IAmAliveTime,
+                        Status = membershipEntry.Status,
+                        SuspectTimes = membershipEntry.SuspectTimes,
+                        Version = etag
+                    }, ret => ret.First());
         }
 
         private static MembershipTableData ConvertToMembershipTableData(IEnumerable<Tuple<MembershipEntry, int>> ret)
@@ -332,10 +334,115 @@ namespace Orleans.Tests.SqlUtils
             {
                 membershipEntries.AddRange(retList.Select(i => new Tuple<MembershipEntry, string>(i.Item1, string.Empty)));
             }
-            return new MembershipTableData(membershipEntries, new TableVersion(tableVersionEtag, tableVersionEtag.ToString()));
+
+            return new MembershipTableData(membershipEntries,
+                new TableVersion(tableVersionEtag, tableVersionEtag.ToString()));
         }
 
 #endif
 
+        public Task<GossipConfiguration> GossipConfigurationReadAsync(string serviceId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task TryCreateGossipConfigurationEntryAsync(string serviceId, MultiClusterConfiguration dataConfiguration)
+        {
+            return ReadAsync(dbStoredQueries.InsertGossipConfigurationKey, DbStoredQueries.Converters.GetSingleBooleanValue,
+            command =>
+                new DbStoredQueries.Columns(command)
+                {
+                    ServiceId = serviceId,
+                    Comment = dataConfiguration.Comment,
+                    Clusters = dataConfiguration.Clusters.ToList(),
+                    Version = 1.ToString(),
+                    TimeStamp = dataConfiguration.AdminTimestamp
+                }, ret => ret.First());
+        }
+
+        public Task TryUpdateGossipConfigurationEntryAsync(MultiClusterConfiguration dataConfiguration,
+            GossipConfiguration currentConfig, int currentConfigVersion)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task TryCreateGossipGatewayEntryAsync(string serviceId, GatewayEntry gatewayInfo)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task TryUpdateGossipGatewayEntryAsync(GatewayEntry gatewayInfo, GossipGateway gatewayInfoInStorage, int version)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task TryDeleteGossipGatewayEntryAsync(GossipGateway gatewayInfoInStorage, int version)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<GossipGateway> ReadGossipGatewayEntryAsync(GatewayEntry gateway)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    internal class GossipConfiguration
+    {
+        internal const string ClustersListSeparator = ","; // safe because clusterid cannot contain commas
+        private static readonly char[] ClustersListSeparatorChars = ClustersListSeparator.ToCharArray();
+
+        public string ServiceId { get; set; }
+
+        public DateTime GossipTimestamp { get; set; }
+
+        public string Clusters { get; set; }
+
+        public string Comment { get; set; }
+
+        public DateTime TimeStamp { get; set; }
+
+        public int Version { get; set; }
+
+
+        internal MultiClusterConfiguration ToConfiguration()
+        {
+            var clusterlist = Clusters.Split(ClustersListSeparatorChars, StringSplitOptions.RemoveEmptyEntries);
+            return new MultiClusterConfiguration(GossipTimestamp, clusterlist, Comment ?? string.Empty);
+        }
+    }
+
+    internal class GossipGateway
+    {
+        public DateTime GossipTimestamp { get; set; }
+
+        public string Status { get; set; }
+
+        public int Version { get; set; }
+
+        // Primary Key
+        public string ClusterId { get; set; }
+
+        // Primary Key
+        public string SiloAddress { get; set; }
+
+        // Primary Key
+        public string ServiceId { get; set; }
+
+        public int SiloPort { get; set; }
+
+        public int SiloGeneration { get; set; }
+
+        internal GatewayEntry ToGatewayEntry()
+        {
+            return new GatewayEntry
+            {
+                ClusterId = ClusterId,
+                SiloAddress = Runtime.SiloAddress.New(new IPEndPoint(IPAddress.Parse(SiloAddress), SiloPort), SiloGeneration),
+                Status = (GatewayStatus)Enum.Parse(typeof(GatewayStatus), Status),
+                HeartbeatTimestamp = GossipTimestamp
+            };
+        }
     }
 }
+
