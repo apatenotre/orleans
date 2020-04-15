@@ -19,7 +19,7 @@ namespace DefaultCluster.Tests.General
     /// <summary>
     /// Summary description for GrainReferenceTest
     /// </summary>
-    [TestCategory("BVT"), TestCategory("Functional"), TestCategory("GrainReference")]
+    [TestCategory("BVT"), TestCategory("GrainReference")]
     public class GrainReferenceTest : HostedTestClusterEnsureDefaultStarted
     {
         public GrainReferenceTest(DefaultClusterFixture fixture) : base(fixture)
@@ -39,7 +39,7 @@ namespace DefaultCluster.Tests.General
             Assert.False(ref2.Equals(ref1));
         }
 
-        [Fact, TestCategory("BVT"), TestCategory("Functional"), TestCategory("AsynchronyPrimitives")]
+        [Fact, TestCategory("BVT"), TestCategory("AsynchronyPrimitives")]
         public void TaskCompletionSource_Resolve()
         {
             string str = "Hello TaskCompletionSource";
@@ -142,7 +142,7 @@ namespace DefaultCluster.Tests.General
         [Fact(Skip = "GrainReference interning is not currently implemented."), TestCategory("Serialization"), TestCategory("Interner")]
         public void GrainReference_Interning()
         {
-            var grainId = GrainId.GetGrainIdForTesting(new Guid());
+            var grainId = LegacyGrainId.GetGrainIdForTesting(new Guid());
             var g1 = GrainReference.FromGrainId(grainId, null);
             var g2 = GrainReference.FromGrainId(grainId, null);
             Assert.Equal(g1, g2); // Should be equal GrainReferences

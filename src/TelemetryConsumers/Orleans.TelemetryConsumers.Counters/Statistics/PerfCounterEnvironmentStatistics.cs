@@ -1,6 +1,7 @@
 #define LOG_MEMORY_PERF_COUNTERS
 
 using Microsoft.Extensions.Logging;
+using Orleans.Internal;
 using Orleans.Runtime;
 using System;
 using System.Diagnostics;
@@ -117,10 +118,11 @@ namespace Orleans.Statistics
                 TotalPhysicalMemory = Capacity;
                 countersAvailable = true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 logger.Warn(ErrorCode.PerfCounterConnectError,
-                    "Error initializing CPU & Memory perf counters - you need to repair Windows perf counter config on this machine with 'lodctr /r' command");
+                    "Error initializing CPU & Memory perf counters - you need to repair Windows perf counter config on this machine with 'lodctr /r' command",
+                    ex);
             }
         }
 

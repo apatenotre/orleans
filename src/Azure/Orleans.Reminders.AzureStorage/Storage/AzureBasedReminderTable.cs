@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.AzureUtils.Utilities;
 using Orleans.Configuration;
+using Orleans.Reminders.AzureStorage;
 
 namespace Orleans.Runtime.ReminderService
 {
@@ -18,9 +19,9 @@ namespace Orleans.Runtime.ReminderService
         private RemindersTableManager remTableManager;
 
         public AzureBasedReminderTable(
-            IGrainReferenceConverter grainReferenceConverter, 
-            ILoggerFactory loggerFactory, 
-            IOptions<ClusterOptions> clusterOptions, 
+            IGrainReferenceConverter grainReferenceConverter,
+            ILoggerFactory loggerFactory,
+            IOptions<ClusterOptions> clusterOptions,
             IOptions<AzureTableReminderStorageOptions> storageOptions)
         {
             this.grainReferenceConverter = grainReferenceConverter;
@@ -33,7 +34,10 @@ namespace Orleans.Runtime.ReminderService
         public async Task Init()
         {
             this.remTableManager = await RemindersTableManager.GetManager(
-                this.clusterOptions.ServiceId, this.clusterOptions.ClusterId, this.storageOptions.ConnectionString, this.storageOptions.TableName, this.loggerFactory);
+                this.clusterOptions.ServiceId,
+                this.clusterOptions.ClusterId,
+                this.loggerFactory,
+                options: this.storageOptions);
         }
 
         private ReminderTableData ConvertFromTableEntryList(IEnumerable<Tuple<ReminderTableEntry, string>> entries)

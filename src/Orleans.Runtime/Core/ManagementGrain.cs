@@ -4,11 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Orleans.Configuration;
-using Orleans.MultiCluster;
 using Orleans.Runtime.MembershipService;
-using Orleans.Runtime.MultiClusterNetwork;
 using Orleans.Versions;
 using Orleans.Versions.Compatibility;
 using Orleans.Versions.Selector;
@@ -18,31 +14,24 @@ namespace Orleans.Runtime.Management
     /// <summary>
     /// Implementation class for the Orleans management grain.
     /// </summary>
-    [OneInstancePerCluster]
     internal class ManagementGrain : Grain, IManagementGrain
     {
-        private readonly MultiClusterOptions multiClusterOptions;
-        private readonly IMultiClusterOracle multiClusterOracle;
         private readonly IInternalGrainFactory internalGrainFactory;
         private readonly ISiloStatusOracle siloStatusOracle;
         private readonly GrainTypeManager grainTypeManager;
         private readonly IVersionStore versionStore;
-        private ILogger logger;
-        private IMembershipTable membershipTable;
+        private readonly MembershipTableManager membershipTableManager;
+        private readonly ILogger logger;
         public ManagementGrain(
-            IOptions<MultiClusterOptions> multiClusterOptions,
-            IMultiClusterOracle multiClusterOracle,
             IInternalGrainFactory internalGrainFactory,
             ISiloStatusOracle siloStatusOracle,
-            IMembershipTable membershipTable, 
             GrainTypeManager grainTypeManager, 
             IVersionStore versionStore,
-            ILogger<ManagementGrain> logger)
+            ILogger<ManagementGrain> logger,
+            MembershipTableManager membershipTableManager)
         {
-            this.multiClusterOptions = multiClusterOptions.Value;
-            this.multiClusterOracle = multiClusterOracle;
+            this.membershipTableManager = membershipTableManager;
             this.internalGrainFactory = internalGrainFactory;
-            this.membershipTable = membershipTable;
             this.siloStatusOracle = siloStatusOracle;
             this.grainTypeManager = grainTypeManager;
             this.versionStore = versionStore;
@@ -51,37 +40,34 @@ namespace Orleans.Runtime.Management
 
         public async Task<Dictionary<SiloAddress, SiloStatus>> GetHosts(bool onlyActive = false)
         {
-            // If the status oracle isn't MembershipOracle, then it is assumed that it does not use IMembershipTable.
-            // In that event, return the approximate silo statuses from the status oracle.
-            if (!(this.siloStatusOracle is MembershipOracle)) return this.siloStatusOracle.GetApproximateSiloStatuses(onlyActive);
-
-            // Explicitly read the membership table and return the results.
-            var table = await GetMembershipTable();
-            var members = await table.ReadAll();
-            var results = onlyActive
-                ? members.Members.Where(item => item.Item1.Status == SiloStatus.Active)
-                : members.Members;
-            return results.ToDictionary(item => item.Item1.SiloAddress, item => item.Item1.Status);
+            await this.membershipTableManager.Refresh();
+            return this.siloStatusOracle.GetApproximateSiloStatuses(onlyActive);
         }
 
         public async Task<MembershipEntry[]> GetDetailedHosts(bool onlyActive = false)
         {
             logger.Info("GetDetailedHosts onlyActive={0}", onlyActive);
 
-            var mTable = await GetMembershipTable();
-            var table = await mTable.ReadAll();
+            await this.membershipTableManager.Refresh();
 
+            var table = this.membershipTableManager.MembershipTableSnapshot;
+
+            MembershipEntry[] result;
             if (onlyActive)
             {
-                return table.Members
-                    .Where(item => item.Item1.Status == SiloStatus.Active)
-                    .Select(x => x.Item1)
+                result = table.Entries
+                    .Where(item => item.Value.Status == SiloStatus.Active)
+                    .Select(x => x.Value)
+                    .ToArray();
+            }
+            else
+            {
+                result = table.Entries
+                    .Select(x => x.Value)
                     .ToArray();
             }
 
-            return table.Members
-                .Select(x => x.Item1)
-                .ToArray();
+            return result;
         }
 
         public Task ForceGarbageCollection(SiloAddress[] siloAddresses)
@@ -278,19 +264,13 @@ namespace Orleans.Runtime.Management
             return await Task.WhenAll(actionPromises);
         }
 
-        private Task<IMembershipTable> GetMembershipTable()
-        {
-            if (!(this.siloStatusOracle is MembershipOracle)) throw new InvalidOperationException("The current membership oracle does not support detailed silo status reporting.");
-            return Task.FromResult(this.membershipTable);
-        }
-
         private SiloAddress[] GetSiloAddresses(SiloAddress[] silos)
         {
             if (silos != null && silos.Length > 0)
                 return silos;
 
             return this.siloStatusOracle
-                       .GetApproximateSiloStatuses(true).Select(s => s.Key).ToArray();
+                       .GetApproximateSiloStatuses(true).Keys.ToArray();
         }
 
         /// <summary>
@@ -312,25 +292,6 @@ namespace Orleans.Runtime.Management
             return requestsToSilos;
         }
 
-        private static XmlDocument XPathValuesToXml(Dictionary<string,string> values)
-        {
-            var doc = new XmlDocument();
-            if (values == null) return doc;
-
-            foreach (var p in values)
-            {
-                var path = p.Key.Split('/').ToList();
-                if (path[0] == "")
-                    path.RemoveAt(0);
-                if (path[0] != "OrleansConfiguration")
-                    path.Insert(0, "OrleansConfiguration");
-                if (!path[path.Count - 1].StartsWith("@"))
-                    throw new ArgumentException("XPath " + p.Key + " must end with @attribute");
-                AddXPathValue(doc, path, p.Value);
-            }
-            return doc;
-        }
-
         private static void AddXPathValue(XmlNode xml, IEnumerable<string> path, string value)
         {
             if (path == null) return;
@@ -338,7 +299,7 @@ namespace Orleans.Runtime.Management
             var first = path.FirstOrDefault();
             if (first == null) return;
 
-            if (first.StartsWith("@"))
+            if (first.StartsWith("@", StringComparison.Ordinal))
             {
                 first = first.Substring(1);
                 if (path.Count() != 1)
@@ -368,62 +329,6 @@ namespace Orleans.Runtime.Management
         private ISiloControl GetSiloControlReference(SiloAddress silo)
         {
             return this.internalGrainFactory.GetSystemTarget<ISiloControl>(Constants.SiloControlId, silo);
-        }
-
-        private IMultiClusterOracle GetMultiClusterOracle()
-        {
-            if (!this.multiClusterOptions.HasMultiClusterNetwork)
-                throw new OrleansException("No multicluster network configured");
-            return this.multiClusterOracle;
-        }
-
-        public Task<List<IMultiClusterGatewayInfo>> GetMultiClusterGateways()
-        {
-            return Task.FromResult(GetMultiClusterOracle().GetGateways().Cast<IMultiClusterGatewayInfo>().ToList());
-        }
-
-        public Task<MultiClusterConfiguration> GetMultiClusterConfiguration()
-        {
-            return Task.FromResult(GetMultiClusterOracle().GetMultiClusterConfiguration());
-        }
-
-        public async Task<MultiClusterConfiguration> InjectMultiClusterConfiguration(IEnumerable<string> clusters, string comment = "", bool checkForLaggingSilosFirst = true)
-        {
-            var multiClusterOracle = GetMultiClusterOracle();
-
-            var configuration = new MultiClusterConfiguration(DateTime.UtcNow, clusters.ToList(), comment);
-
-            if (!MultiClusterConfiguration.OlderThan(multiClusterOracle.GetMultiClusterConfiguration(), configuration))
-                throw new OrleansException("Could not inject multi-cluster configuration: current configuration is newer than clock");
-
-            if (checkForLaggingSilosFirst)
-            {
-                try
-                {
-                    var laggingSilos = await multiClusterOracle.FindLaggingSilos(multiClusterOracle.GetMultiClusterConfiguration());
-
-                    if (laggingSilos.Count > 0)
-                    {
-                        var msg = string.Format("Found unstable silos {0}", string.Join(",", laggingSilos));
-                        throw new OrleansException(msg);
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new OrleansException("Could not inject multi-cluster configuration: stability check failed", e);
-                }
-            }
-
-            await multiClusterOracle.InjectMultiClusterConfiguration(configuration);
-
-            return configuration;
-        }
-
-        public Task<List<SiloAddress>> FindLaggingSilos()
-        {
-            var multiClusterOracle = GetMultiClusterOracle();
-            var expected = multiClusterOracle.GetMultiClusterConfiguration();
-            return multiClusterOracle.FindLaggingSilos(expected);
         }
     }
 }

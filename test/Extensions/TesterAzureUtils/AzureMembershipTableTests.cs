@@ -1,13 +1,11 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans;
 using Orleans.AzureUtils;
+using Orleans.Clustering.AzureStorage;
 using Orleans.Configuration;
 using Orleans.Messaging;
-using Orleans.Runtime;
-using Orleans.Runtime.Configuration;
 using Orleans.Runtime.MembershipService;
 using TestExtensions;
 using UnitTests;
@@ -40,7 +38,6 @@ namespace Tester.AzureUtils
             TestUtils.CheckForAzureStorage();
             var options = new AzureStorageClusteringOptions()
             {
-                MaxStorageBusyRetries = 3,
                 ConnectionString = this.connectionString,
             };
             return new AzureBasedMembershipTable(loggerFactory, Options.Create(options), this.clusterOptions);

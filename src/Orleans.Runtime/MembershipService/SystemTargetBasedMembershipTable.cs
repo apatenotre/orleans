@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Concurrency;
 using Orleans.Configuration;
+using Orleans.Internal;
 using Orleans.MultiCluster;
 using Orleans.Runtime.Providers;
 using Orleans.Serialization;
@@ -110,7 +111,6 @@ namespace Orleans.Runtime.MembershipService
     }
 
     [Reentrant]
-    [OneInstancePerCluster]
     internal class MembershipTableSystemTarget : SystemTarget, IMembershipTableSystemTarget
     {
         private InMemoryMembershipTable table;

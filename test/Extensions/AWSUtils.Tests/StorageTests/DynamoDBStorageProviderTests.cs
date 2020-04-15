@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -93,7 +93,7 @@ namespace AWSUtils.Tests.StorageTests
 
             var grainState = TestStoreGrainState.NewRandomState(stringLength);
             EnsureEnvironmentSupportsState(grainState);
-            var grainId = GrainId.NewId();
+            var grainId = LegacyGrainId.NewId();
 
             var store = await InitDynamoDBGrainStorage(useJsonForWrite);
 
@@ -121,7 +121,7 @@ namespace AWSUtils.Tests.StorageTests
             var grainState = TestStoreGrainState.NewRandomState(stringLength);
             EnsureEnvironmentSupportsState(grainState);
 
-            var grainId = GrainId.NewId();
+            var grainId = LegacyGrainId.NewId();
 
             var store = await InitDynamoDBGrainStorage(useJsonForFirstWrite);
 
@@ -157,7 +157,7 @@ namespace AWSUtils.Tests.StorageTests
 
             storage.ConvertToStorageFormat(initialState, entity);
 
-            var convertedState = (TestStoreGrainState)storage.ConvertFromStorageFormat(entity);
+            var convertedState = (TestStoreGrainState)storage.ConvertFromStorageFormat(entity, initialState.GetType());
             Assert.NotNull(convertedState);
             Assert.Equal(initialState.A, convertedState.A);
             Assert.Equal(initialState.B, convertedState.B);
@@ -166,8 +166,8 @@ namespace AWSUtils.Tests.StorageTests
 
         private async Task<DynamoDBGrainStorage> InitDynamoDBGrainStorage(DynamoDBStorageOptions options)
         {
-            DynamoDBGrainStorage store = ActivatorUtilities.CreateInstance<DynamoDBGrainStorage>(this.providerRuntime.ServiceProvider, options);
-            ISiloLifecycleSubject lifecycle = ActivatorUtilities.CreateInstance<SiloLifecycleSubject>(this.providerRuntime.ServiceProvider, new LifecycleSubject(null));
+            DynamoDBGrainStorage store = ActivatorUtilities.CreateInstance<DynamoDBGrainStorage>(this.providerRuntime.ServiceProvider, "StorageProviderTests", options);
+            ISiloLifecycleSubject lifecycle = ActivatorUtilities.CreateInstance<SiloLifecycleSubject>(this.providerRuntime.ServiceProvider, NullLogger<SiloLifecycleSubject>.Instance);
             store.Participate(lifecycle);
             await lifecycle.OnStart();
             return store;
@@ -176,7 +176,7 @@ namespace AWSUtils.Tests.StorageTests
         private Task<DynamoDBGrainStorage> InitDynamoDBGrainStorage(bool useJson = false)
         {
             var options = new DynamoDBStorageOptions
-            {                
+            {
                 Service = AWSTestConstants.Service,
                 UseJson = useJson
             };
@@ -184,9 +184,9 @@ namespace AWSUtils.Tests.StorageTests
         }
 
         private async Task Test_PersistenceProvider_Read(string grainTypeName, IGrainStorage store,
-            GrainState<TestStoreGrainState> grainState = null, GrainId grainId = null)
+            GrainState<TestStoreGrainState> grainState = null, GrainId grainId = default)
         {
-            var reference = this.fixture.InternalGrainFactory.GetGrain(grainId ?? GrainId.NewId());
+            var reference = this.fixture.InternalGrainFactory.GetGrain(grainId.IsDefault ? (GrainId)LegacyGrainId.NewId() : grainId);
 
             if (grainState == null)
             {
@@ -209,9 +209,9 @@ namespace AWSUtils.Tests.StorageTests
         }
 
         private async Task<GrainState<TestStoreGrainState>> Test_PersistenceProvider_WriteRead(string grainTypeName,
-            IGrainStorage store, GrainState<TestStoreGrainState> grainState = null, GrainId grainId = null)
+            IGrainStorage store, GrainState<TestStoreGrainState> grainState = null, GrainId grainId = default)
         {
-            GrainReference reference = this.fixture.InternalGrainFactory.GetGrain(grainId ?? GrainId.NewId());
+            GrainReference reference = this.fixture.InternalGrainFactory.GetGrain(grainId.IsDefault ? (GrainId)LegacyGrainId.NewId() : grainId);
 
             if (grainState == null)
             {
@@ -241,9 +241,9 @@ namespace AWSUtils.Tests.StorageTests
         }
 
         private async Task<GrainState<TestStoreGrainState>> Test_PersistenceProvider_WriteClearRead(string grainTypeName,
-            IGrainStorage store, GrainState<TestStoreGrainState> grainState = null, GrainId grainId = null)
+            IGrainStorage store, GrainState<TestStoreGrainState> grainState = null, GrainId grainId = default)
         {
-            GrainReference reference = this.fixture.InternalGrainFactory.GetGrain(grainId ?? GrainId.NewId());
+            GrainReference reference = this.fixture.InternalGrainFactory.GetGrain(grainId.IsDefault ? (GrainId)LegacyGrainId.NewId() : grainId);
 
             if (grainState == null)
             {

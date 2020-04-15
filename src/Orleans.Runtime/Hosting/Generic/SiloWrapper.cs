@@ -19,8 +19,8 @@ namespace Orleans.Hosting
             this.silo = silo;
             this.Stopped = silo.SiloTerminated;
 
-            // It is fine for this field to be null in the case that the client is not the host.
-            this.applicationLifetime = services.GetService<IApplicationLifetime>() as SiloApplicationLifetime;
+            // It is fine for this field to be null in the case that the silo is not the host.
+            this.applicationLifetime = services.GetService<IHostApplicationLifetime>() as SiloApplicationLifetime;
         }
 
         /// <inheritdoc />
@@ -43,7 +43,6 @@ namespace Orleans.Hosting
             {
                 this.applicationLifetime?.StopApplication();
                 await silo.StopAsync(cancellationToken);
-                await this.Stopped;
             }
             finally
             {

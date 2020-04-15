@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Runtime.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Orleans.Hosting;
+using Orleans.Internal;
 using Orleans.MultiCluster;
 using Orleans.Runtime;
 using Orleans.Runtime.GrainDirectory;
 using Orleans.Runtime.Messaging;
-using Orleans.Runtime.MultiClusterNetwork;
 using Orleans.Runtime.Placement;
 using Orleans.Storage;
 
@@ -50,7 +50,7 @@ namespace Orleans.TestingHost
             var catalog = this.host.Services.GetRequiredService<Catalog>();
             foreach (var kvp in localGrainDirectory.DirectoryPartition.GetItems())
             {
-                if (kvp.Key.IsSystemTarget || kvp.Key.IsClient || !kvp.Key.IsGrain)
+                if (kvp.Key.IsSystemTarget() || kvp.Key.IsClient() || !kvp.Key.IsLegacyGrain())
                     continue;// Skip system grains, system targets and clients
                 if (catalog.GetGrainTypeName(kvp.Key).Contains(expr))
                     x.Add(kvp.Key, kvp.Value);
@@ -79,20 +79,6 @@ namespace Orleans.TestingHost
             var mc = this.host.Services.GetRequiredService<MessageCenter>();
             mc.ShouldDrop = null;
             simulatedMessageLoss.Clear();
-        }
-
-        internal Func<ILogConsistencyProtocolMessage,bool> ProtocolMessageFilterForTesting
-        {
-            get
-            {
-                var mco = this.host.Services.GetRequiredService<MultiClusterOracle>();
-                return mco.ProtocolMessageFilterForTesting;
-            }
-            set
-            {
-                var mco = this.host.Services.GetRequiredService<MultiClusterOracle>();
-                mco.ProtocolMessageFilterForTesting = value;
-            }
         }
 
         private bool ShouldDrop(Message msg)

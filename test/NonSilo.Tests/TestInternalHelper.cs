@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,14 +13,12 @@ namespace UnitTests.TesterInternal
     public class TestInternalHelper
     {
         internal static OrleansTaskScheduler InitializeSchedulerForTesting(
-            ISchedulingContext context,
-            IHostEnvironmentStatistics hostStatistics,
+            IGrainContext context,
             ILoggerFactory loggerFactory)
         {
             var services = new ServiceCollection();
             services.AddOptions();
             services.AddLogging();
-            services.AddSingleton<ExecutorService>();
             services.AddSingleton<SchedulerStatisticsGroup>();
             services.AddSingleton<StageAnalysisStatisticsGroup>();
             services.AddSingleton(loggerFactory);
@@ -30,12 +28,12 @@ namespace UnitTests.TesterInternal
                 options.DelayWarningThreshold = TimeSpan.FromMilliseconds(100);
                 options.ActivationSchedulingQuantum = TimeSpan.FromMilliseconds(100);
                 options.TurnWarningLengthThreshold = TimeSpan.FromMilliseconds(100);
+                options.StoppedActivationWarningInterval = TimeSpan.FromMilliseconds(200);
             });
 
             var serviceProvider = services.BuildServiceProvider();
 
             var scheduler = ActivatorUtilities.CreateInstance<OrleansTaskScheduler>(serviceProvider);
-            scheduler.Start();
             WorkItemGroup ignore = scheduler.RegisterWorkContext(context);
             return scheduler;
         }

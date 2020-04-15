@@ -1,13 +1,13 @@
 using System;
 using System.Text;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage.Table;
-using Orleans;
-using Orleans.Tests.AzureUtils;
+using Orleans.Internal;
+using Orleans.Clustering.AzureStorage;
 
 namespace Tester.AzureUtils
 {
-    [Serializable]    
+    [Serializable]
     public class UnitTestAzureTableData : TableEntity
     {
         public byte[] Data { get; set; }
@@ -51,9 +51,9 @@ namespace Tester.AzureUtils
         protected const string INSTANCE_TABLE_NAME = "UnitTestAzureData";
 
         public UnitTestAzureTableDataManager(string storageConnectionString, ILoggerFactory loggerFactory)
-            : base(INSTANCE_TABLE_NAME, storageConnectionString, loggerFactory)
+            : base(INSTANCE_TABLE_NAME, storageConnectionString, loggerFactory.CreateLogger<UnitTestAzureTableDataManager>(), new AzureStoragePolicyOptions())
         {
-            InitTableAsync().WithTimeout(AzureTableDefaultPolicies.TableCreationTimeout).Wait();
+            InitTableAsync().WithTimeout(new AzureStoragePolicyOptions().CreationTimeout).Wait();
         }
     }
 }

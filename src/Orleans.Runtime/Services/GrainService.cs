@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Core;
-using Orleans.Runtime.Configuration;
 using Orleans.Runtime.ConsistentRing;
 using Orleans.Runtime.Scheduler;
 using Orleans.Services;
@@ -36,17 +35,18 @@ namespace Orleans.Runtime
             }
         }
 
+        public GrainReference GetGrainReference() => GrainReference.FromGrainId(((ISystemTargetBase)this).GrainId, ((ISystemTargetBase)this).GrainReferenceRuntime, null, this.Silo);
+
         /// <summary>Only to make Reflection happy. Do not use it in your implementation</summary>
         [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
         [System.Diagnostics.DebuggerHidden]
-        
-        protected GrainService() : base(null, null, null)
+        protected GrainService() : base(default(GrainId), null, null)
         {
             throw new Exception("This should not be constructed by client code.");
         }
 
         /// <summary>Constructor to use for grain services</summary>
-        protected GrainService(IGrainIdentity grainId, Silo silo, ILoggerFactory loggerFactory) : base((GrainId)grainId, silo.SiloAddress, lowPriority: true, loggerFactory:loggerFactory)
+        protected GrainService(GrainId grainId, Silo silo, ILoggerFactory loggerFactory) : base(grainId, silo.SiloAddress, lowPriority: true, loggerFactory:loggerFactory)
         {
             typeName = this.GetType().FullName;
             Logger = loggerFactory.CreateLogger(typeName);
@@ -108,7 +108,7 @@ namespace Orleans.Runtime
 
         void IRingRangeListener.RangeChangeNotification(IRingRange oldRange, IRingRange newRange, bool increased)
         {
-            scheduler.QueueTask(() => OnRangeChange(oldRange, newRange, increased), this.SchedulingContext).Ignore();
+            scheduler.QueueTask(() => OnRangeChange(oldRange, newRange, increased), this).Ignore();
         }
 
         /// <summary>Invoked when the ring range owned by the service instance changes because of a change in the cluster state</summary>

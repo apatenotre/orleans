@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 using Orleans.Configuration;
 using Orleans.Runtime;
@@ -53,13 +53,17 @@ namespace Orleans.Transactions.AzureStorage
         {
             string grainKey = context.GrainInstance.GrainReference.ToShortKeyString();
             var key = $"{grainKey}_{this.clusterOptions.ServiceId}_{stateName}";
-            return AzureStorageUtils.SanitizeTableProperty(key);
+            return AzureTableUtils.SanitizeTableProperty(key);
         }
 
         private async Task CreateTable()
         {
-            var tableManager = new AzureTableDataManager<TableEntity>(this.options.TableName, this.options.ConnectionString, this.loggerFactory);
-            await tableManager.InitTableAsync().ConfigureAwait(false);
+            var tableManager = new AzureTableDataManager<TableEntity>(
+                this.options.TableName,
+                this.options.ConnectionString,
+                this.loggerFactory.CreateLogger<AzureTableDataManager<TableEntity>>(),
+                this.options.StoragePolicyOptions);
+            await tableManager.InitTableAsync();
             this.table = tableManager.Table;
         }
 

@@ -90,6 +90,7 @@ namespace Orleans.Serialization
             {
                 settings.TypeNameHandling = typeNameHandling.Value;
             }
+           
             return settings;
         }
 
@@ -107,19 +108,20 @@ namespace Orleans.Serialization
                 return null;
             }
 
+            var outputWriter = new BinaryTokenStreamWriter();
             var serializationContext = new SerializationContext(context.GetSerializationManager())
             {
-                StreamWriter = new BinaryTokenStreamWriter()
+                StreamWriter = outputWriter
             };
             
             Serialize(source, serializationContext, source.GetType());
             var deserializationContext = new DeserializationContext(context.GetSerializationManager())
             {
-                StreamReader = new BinaryTokenStreamReader(serializationContext.StreamWriter.ToBytes())
+                StreamReader = new BinaryTokenStreamReader(outputWriter.ToBytes())
             };
 
             var retVal = Deserialize(source.GetType(), deserializationContext);
-            serializationContext.StreamWriter.ReleaseBuffers();
+            outputWriter.ReleaseBuffers();
             return retVal;
         }
 
@@ -193,14 +195,14 @@ namespace Orleans.Serialization
             GrainId id = (GrainId)value;
             writer.WriteStartObject();
             writer.WritePropertyName("GrainId");
-            writer.WriteValue(id.ToParsableString());
+            writer.WriteValue(((LegacyGrainId)id).ToParsableString());
             writer.WriteEndObject();
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             JObject jo = JObject.Load(reader);
-            GrainId grainId = GrainId.FromParsableString(jo["GrainId"].ToObject<string>());
+            GrainId grainId = LegacyGrainId.FromParsableString(jo["GrainId"].ToObject<string>());
             return grainId;
         }
     }

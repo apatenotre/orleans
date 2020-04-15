@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.TestingHost.Utils;
+using Orleans.Internal;
+using Orleans.Reminders.AzureStorage;
 
 // ReSharper disable InconsistentNaming
 // ReSharper disable UnusedVariable
@@ -94,8 +96,8 @@ namespace Tester.AzureUtils.TimerTests
 
                     var e = new ReminderEntry
                     {
-                        //GrainId = GrainId.GetGrainId(new Guid(s)),
-                        GrainRef = this.fixture.InternalGrainFactory.GetGrain(GrainId.NewId()),
+                        //GrainId = LegacyGrainId.GetGrainId(new Guid(s)),
+                        GrainRef = this.fixture.InternalGrainFactory.GetGrain(LegacyGrainId.NewId()),
                         ReminderName = "MY_REMINDER_" + i,
                         Period = TimeSpan.FromSeconds(5),
                         StartAt = DateTime.UtcNow
@@ -127,7 +129,7 @@ namespace Tester.AzureUtils.TimerTests
             Guid guid = Guid.NewGuid();
             return new ReminderEntry
                 {
-                    GrainRef = this.fixture.InternalGrainFactory.GetGrain(GrainId.NewId()),
+                    GrainRef = this.fixture.InternalGrainFactory.GetGrain(LegacyGrainId.NewId()),
                     ReminderName = string.Format("TestReminder.{0}", guid),
                     Period = TimeSpan.FromSeconds(5),
                     StartAt = DateTime.UtcNow

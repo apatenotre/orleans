@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Orleans.Configuration;
 using Orleans.Configuration.Overrides;
+using Orleans.Runtime.Configuration;
 
 namespace Orleans.Storage
 {
@@ -410,7 +411,9 @@ namespace Orleans.Storage
                 queries.Single(i => i.Item1 == "ReadFromStorageKey").Item2,
                 queries.Single(i => i.Item1 == "ClearStorageKey").Item2);
 
-            logger.Info((int)RelationalStorageProviderCodes.RelationalProviderInitProvider, $"Initialized storage provider: ServiceId={serviceId} ProviderName={this.name} Invariant={Storage.InvariantName} ConnectionString={Storage.ConnectionString}.");
+            logger.Info(
+                (int)RelationalStorageProviderCodes.RelationalProviderInitProvider,
+                $"Initialized storage provider: ServiceId={serviceId} ProviderName={this.name} Invariant={Storage.InvariantName} ConnectionString={ConfigUtilities.RedactConnectionStringInfo(Storage.ConnectionString)}.");
         }
 
 
@@ -564,6 +567,8 @@ namespace Orleans.Storage
             {
                 var typeResolver = providerRuntime.ServiceProvider.GetRequiredService<ITypeResolver>();
                 var jsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, providerRuntime.GrainFactory), options.UseFullAssemblyNames, options.IndentJson, options.TypeNameHandling);
+                options.ConfigureJsonSerializerSettings?.Invoke(jsonSettings);
+
                 deserializers.Add(new OrleansStorageDefaultJsonDeserializer(jsonSettings, JsonFormatSerializerTag));
             }
 
@@ -589,6 +594,7 @@ namespace Orleans.Storage
                 var typeResolver = providerRuntime.ServiceProvider.GetRequiredService<ITypeResolver>();
                 var jsonSettings = OrleansJsonSerializer.UpdateSerializerSettings(OrleansJsonSerializer.GetDefaultSerializerSettings(typeResolver, providerRuntime.GrainFactory),
                     options.UseFullAssemblyNames, options.IndentJson, options.TypeNameHandling);
+                options.ConfigureJsonSerializerSettings?.Invoke(jsonSettings);
                 serializers.Add(new OrleansStorageDefaultJsonSerializer(jsonSettings, JsonFormatSerializerTag));
             }
             if(options.UseXmlFormat)

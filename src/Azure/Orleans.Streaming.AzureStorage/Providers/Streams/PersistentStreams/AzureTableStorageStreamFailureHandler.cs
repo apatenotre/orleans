@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Runtime;
 using Orleans.Serialization;
-using Orleans.Streams;
 using Orleans.Streaming.AzureStorage;
+using Orleans.Streams;
 
 namespace Orleans.Providers.Streams.PersistentStreams
 {
@@ -48,7 +48,11 @@ namespace Orleans.Providers.Streams.PersistentStreams
             this.clusterId = clusterId;
             ShouldFaultSubsriptionOnError = faultOnFailure;
             this.createEntity = createEntity ?? DefaultCreateEntity;
-            dataManager = new AzureTableDataManager<TEntity>(tableName, storageConnectionString, loggerFactory);
+            dataManager = new AzureTableDataManager<TEntity>(
+                tableName,
+                storageConnectionString,
+                loggerFactory.CreateLogger<AzureTableDataManager<TEntity>>(),
+                new AzureStoragePolicyOptions());
         }
 
         /// <summary>
