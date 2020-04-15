@@ -230,6 +230,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Orleans.Analyzers", "src\Or
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Analyzers.Tests", "test\Analyzers.Tests\Analyzers.Tests.csproj", "{B94232D8-B8C2-45D8-AE09-7D8A0B0D88ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoTest", "DynamoTest\DynamoTest.csproj", "{3AA28494-C36E-4CC2-B338-62AA7E02713C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1404,6 +1406,18 @@ Global
 		{B94232D8-B8C2-45D8-AE09-7D8A0B0D88ED}.Release|x64.Build.0 = Release|Any CPU
 		{B94232D8-B8C2-45D8-AE09-7D8A0B0D88ED}.Release|x86.ActiveCfg = Release|Any CPU
 		{B94232D8-B8C2-45D8-AE09-7D8A0B0D88ED}.Release|x86.Build.0 = Release|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Debug|x64.Build.0 = Debug|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Debug|x86.Build.0 = Debug|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Release|x64.ActiveCfg = Release|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Release|x64.Build.0 = Release|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Release|x86.ActiveCfg = Release|Any CPU
+		{3AA28494-C36E-4CC2-B338-62AA7E02713C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

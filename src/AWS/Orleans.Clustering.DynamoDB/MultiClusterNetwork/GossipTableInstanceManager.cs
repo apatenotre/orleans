@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Microsoft.Extensions.Logging;
 using Orleans.Configuration;
@@ -173,12 +174,14 @@ namespace Orleans.Clustering.DynamoDB.MultiClusterNetwork
                 await func().ConfigureAwait(false);
                 return true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 // todo: improve logged message by parsing AWS specific exceptions
                 if (_logger.IsEnabled(LogLevel.Trace)) _logger.Trace("{0} failed", operation);
 
-                // todo: should we throw an exception here ?
+                if (DynamoDBStorageUtils.IsContentionError(e))
+                    return false;
+
                 throw;
             }
         }
