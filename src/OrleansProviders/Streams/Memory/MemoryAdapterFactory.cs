@@ -182,7 +182,7 @@ namespace Orleans.Providers
             }
             catch (Exception exc)
             {
-                logger.Error((int)ProviderErrorCode.MemoryStreamProviderBase_QueueMessageBatchAsync, "Exception thrown in MemoryAdapterFactory.QueueMessageBatchAsync.", exc);
+                logger.LogError((int)ProviderErrorCode.MemoryStreamProviderBase_QueueMessageBatchAsync, exc, "Exception thrown in MemoryAdapterFactory.QueueMessageBatchAsync.");
                 throw;
             }
         }
@@ -245,7 +245,7 @@ namespace Orleans.Providers
         /// <returns></returns>
         private IMemoryStreamQueueGrain GetQueueGrain(QueueId queueId)
         {
-            return queueGrains.GetOrAdd(queueId, grainFactory.GetGrain<IMemoryStreamQueueGrain>(GenerateDeterministicGuid(queueId)));
+            return queueGrains.GetOrAdd(queueId, id => grainFactory.GetGrain<IMemoryStreamQueueGrain>(GenerateDeterministicGuid(id)));
         }
 
         public static MemoryAdapterFactory<TSerializer> Create(IServiceProvider services, string name)

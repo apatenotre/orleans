@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -13,10 +12,10 @@ using Xunit;
 using Xunit.Abstractions;
 using Orleans;
 using Orleans.Hosting;
-using Orleans.Runtime;
 using Orleans.TestingHost;
 using Orleans.Providers;
 using Orleans.Persistence.AzureStorage;
+using Orleans.Internal;
 using TestExtensions;
 using TestExtensions.Runners;
 using UnitTests.GrainInterfaces;
@@ -41,9 +40,9 @@ namespace Tester.AzureUtils.Persistence
         private GrainPersistenceTestsRunner basicPersistenceTestsRunner;
         private const int MaxReadTime = 200;
         private const int MaxWriteTime = 2000;
-        public class SiloBuilderConfigurator : ISiloBuilderConfigurator
+        public class SiloBuilderConfigurator : ISiloConfigurator
         {
-            public void Configure(ISiloHostBuilder hostBuilder)
+            public void Configure(ISiloBuilder hostBuilder)
             {
                 hostBuilder.UseAzureStorageClustering(options =>
                 {

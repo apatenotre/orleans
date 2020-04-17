@@ -4,10 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Orleans.CodeGeneration;
 using Orleans.Configuration;
-using Orleans.Providers;
 using Orleans.Runtime;
 using Orleans.Timers.Internal;
 using Orleans.Transactions.Abstractions;
@@ -24,12 +22,9 @@ namespace Orleans.Transactions
         private readonly ITransactionCommitterConfiguration config;
         private readonly IGrainActivationContext context;
         private readonly ITransactionDataCopier<OperationState> copier;
-        private readonly IProviderRuntime runtime;
         private readonly IGrainRuntime grainRuntime;
-        private readonly ILoggerFactory loggerFactory;
-        private readonly JsonSerializerSettings serializerSettings;
-
-        private ILogger logger;
+        private readonly ActivationLifetime activationLifetime;
+        private readonly ILogger logger;
         private ParticipantId participantId;
         private TransactionQueue<OperationState> queue;
 
@@ -39,19 +34,15 @@ namespace Orleans.Transactions
             ITransactionCommitterConfiguration config,
             IGrainActivationContext context,
             ITransactionDataCopier<OperationState> copier,
-            IProviderRuntime runtime,
             IGrainRuntime grainRuntime,
-            ILoggerFactory loggerFactory,
-            JsonSerializerSettings serializerSettings
-            )
+            ILogger<TransactionCommitter<TService>> logger)
         {
             this.config = config;
             this.context = context;
             this.copier = copier;
-            this.runtime = runtime;
             this.grainRuntime = grainRuntime;
-            this.loggerFactory = loggerFactory;
-            this.serializerSettings = serializerSettings;
+            this.logger = logger;
+            this.activationLifetime = new ActivationLifetime(this.context);
         }
 
         /// <inheritdoc/>
@@ -137,8 +128,6 @@ namespace Orleans.Transactions
 
             this.participantId = new ParticipantId(this.config.ServiceName, this.context.GrainInstance.GrainReference, ParticipantId.Role.Resource | ParticipantId.Role.PriorityManager);
 
-            this.logger = loggerFactory.CreateLogger($"{context.GrainType.Name}.{this.config.ServiceName}.{this.context.GrainIdentity.IdentityString}");
-
             var storageFactory = this.context.ActivationServices.GetRequiredService<INamedTransactionalStateStorageFactory>();
             ITransactionalStateStorage<OperationState> storage = storageFactory.Create<OperationState>(this.config.StorageName, this.config.ServiceName);
 
@@ -148,7 +137,7 @@ namespace Orleans.Transactions
             var clock = this.context.ActivationServices.GetRequiredService<IClock>();
             TService service = this.context.ActivationServices.GetRequiredServiceByName<TService>(this.config.ServiceName);
             var timerManager = this.context.ActivationServices.GetRequiredService<ITimerManager>();
-            this.queue = new TocTransactionQueue<TService>(service, options, this.participantId, deactivate, storage, this.serializerSettings, clock, logger, timerManager);
+            this.queue = new TocTransactionQueue<TService>(service, options, this.participantId, deactivate, storage, clock, logger, timerManager, this.activationLifetime);
 
             // Add transaction manager factory to the grain context
             this.context.RegisterResourceFactory<ITransactionManager>(this.config.ServiceName, () => new TransactionManager<OperationState>(this.queue));

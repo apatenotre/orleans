@@ -5,11 +5,12 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage.Table;
-using Orleans.Runtime;
 using Orleans.Clustering.AzureStorage;
 using Orleans.Clustering.AzureStorage.Utilities;
+using Orleans.Internal;
+using Orleans.Runtime;
 
 namespace Orleans.AzureUtils
 {
@@ -34,7 +35,9 @@ namespace Orleans.AzureUtils
             TableName = tableName;
             logger = loggerFactory.CreateLogger<OrleansSiloInstanceManager>();
             storage = new AzureTableDataManager<SiloInstanceTableEntry>(
-                tableName, storageConnectionString, loggerFactory);
+                tableName,
+                storageConnectionString,
+                loggerFactory.CreateLogger<AzureTableDataManager<SiloInstanceTableEntry>>());
         }
 
         public static async Task<OrleansSiloInstanceManager> GetManager(string clusterId, string storageConnectionString, string tableName, ILoggerFactory loggerFactory)
@@ -176,7 +179,7 @@ namespace Orleans.AzureUtils
 
         internal Task<string> MergeTableEntryAsync(SiloInstanceTableEntry data)
         {
-            return storage.MergeTableEntryAsync(data, AzureStorageUtils.ANY_ETAG); // we merge this without checking eTags.
+            return storage.MergeTableEntryAsync(data, AzureTableUtils.ANY_ETAG); // we merge this without checking eTags.
         }
 
         internal Task<Tuple<SiloInstanceTableEntry, string>> ReadSingleTableEntryAsync(string partitionKey, string rowKey)
@@ -193,7 +196,7 @@ namespace Orleans.AzureUtils
 
             await DeleteEntriesBatch(entriesList);
 
-            return entriesList.Count();
+            return entriesList.Count;
         }
 
         public async Task CleanupDefunctSiloEntries(DateTimeOffset beforeDate)
@@ -286,10 +289,10 @@ namespace Orleans.AzureUtils
             {
                 HttpStatusCode httpStatusCode;
                 string restStatus;
-                if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
+                if (!AzureTableUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
 
                 if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("InsertSiloEntryConditionally failed with httpStatusCode={0}, restStatus={1}", httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
+                if (AzureTableUtils.IsContentionError(httpStatusCode)) return false;
 
                 throw;
             }
@@ -312,10 +315,10 @@ namespace Orleans.AzureUtils
             {
                 HttpStatusCode httpStatusCode;
                 string restStatus;
-                if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
+                if (!AzureTableUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
 
                 if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("InsertSiloEntryConditionally failed with httpStatusCode={0}, restStatus={1}", httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
+                if (AzureTableUtils.IsContentionError(httpStatusCode)) return false;
 
                 throw;
             }
@@ -340,10 +343,10 @@ namespace Orleans.AzureUtils
             {
                 HttpStatusCode httpStatusCode;
                 string restStatus;
-                if (!AzureStorageUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
+                if (!AzureTableUtils.EvaluateException(exc, out httpStatusCode, out restStatus)) throw;
 
                 if (logger.IsEnabled(LogLevel.Trace)) logger.Trace("UpdateSiloEntryConditionally failed with httpStatusCode={0}, restStatus={1}", httpStatusCode, restStatus);
-                if (AzureStorageUtils.IsContentionError(httpStatusCode)) return false;
+                if (AzureTableUtils.IsContentionError(httpStatusCode)) return false;
 
                 throw;
             }

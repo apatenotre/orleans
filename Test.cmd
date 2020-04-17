@@ -40,14 +40,14 @@ set TESTS=^
 %CMDHOME%\test\Transactions\Orleans.Transactions.Azure.Test,^
 %CMDHOME%\test\TestInfrastructure\Orleans.TestingHost.Tests,^
 %CMDHOME%\test\DependencyInjection.Tests,^
-%CMDHOME%\test\Analyzers.Tests
-
-if []==[%TEST_FILTERS%] set TEST_FILTERS=-trait Category=BVT -trait Category=SlowBVT
+%CMDHOME%\test\Orleans.Connections.Security.Tests,^
+%CMDHOME%\test\NetCore.Tests,^
+%CMDHOME%\test\Analyzers.Tests,^
+%CMDHOME%\test\CodeGeneration\CodeGenerator.Tests
 
 @Echo Test assemblies = %TESTS%
-@Echo Test filters = %TEST_FILTERS%
 
-PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& ./Parallel-Tests.ps1 -directories %TESTS% -testFilter \"%TEST_FILTERS%\" -outDir '%TestResultDir%' -dotnet '%_dotnet%'"
+PowerShell -NoProfile -ExecutionPolicy Bypass -Command "& ./Parallel-Tests.ps1 -directories %TESTS% -dotnet '%_dotnet%'"
 set testresult=%errorlevel%
 popd
 endlocal&set testresult=%testresult%

@@ -2,7 +2,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-
 using Orleans;
 using Orleans.AzureUtils;
 using Orleans.Configuration;
@@ -12,6 +11,8 @@ using Tester;
 using TestExtensions;
 using Xunit;
 using Orleans.Reminders.AzureStorage;
+using Orleans.Clustering.AzureStorage;
+using AzureTableDefaultPolicies = Orleans.Clustering.AzureStorage.AzureTableDefaultPolicies;
 
 namespace UnitTests.RemindersTest
 {
@@ -33,11 +34,12 @@ namespace UnitTests.RemindersTest
             filters.AddFilter("Storage", LogLevel.Trace);
             return filters;
         }
-        public override void Dispose()
+
+        public override Task DisposeAsync()
         {
             // Reset init timeout after tests
             OrleansSiloInstanceManager.initTimeout = AzureTableDefaultPolicies.TableCreationTimeout;
-            base.Dispose();
+            return base.DisposeAsync();
         }
 
         protected override IReminderTable CreateRemindersTable()

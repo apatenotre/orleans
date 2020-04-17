@@ -8,6 +8,7 @@ using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Configuration;
 using RunState = Orleans.Configuration.StreamLifecycleOptions.RunState;
+using Orleans.Internal;
 
 namespace Orleans.Streams
 {
@@ -74,7 +75,7 @@ namespace Orleans.Streams
             this.adapterFactory = adapterFactory;
 
             queueAdapterCache = adapterFactory.GetQueueAdapterCache();
-            logger = loggerFactory.CreateLogger($"{GetType().FullName}-{streamProviderName}");
+            logger = loggerFactory.CreateLogger($"{GetType().FullName}.{streamProviderName}");
             Log(ErrorCode.PersistentStreamPullingManager_01, "Created {0} for Stream Provider {1}.", GetType().Name, streamProviderName);
             this.loggerFactory = loggerFactory;
             IntValueStatistic.FindOrCreate(new StatisticName(StatisticNames.STREAMS_PERSISTENT_STREAM_NUM_PULLING_AGENTS, strProviderName), () => queuesToAgentsMap.Count);
@@ -106,7 +107,7 @@ namespace Orleans.Streams
                 queuePrintTimer.Dispose();
                 this.queuePrintTimer = null;
             }
-            (this.queueBalancer as IDisposable)?.Dispose();
+            await this.queueBalancer.Shutdown();
             this.queueBalancer = null; 
         }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -157,7 +157,7 @@ namespace AWSUtils.Tests.StorageTests
 
             storage.ConvertToStorageFormat(initialState, entity);
 
-            var convertedState = (TestStoreGrainState)storage.ConvertFromStorageFormat(entity);
+            var convertedState = (TestStoreGrainState)storage.ConvertFromStorageFormat(entity, initialState.GetType());
             Assert.NotNull(convertedState);
             Assert.Equal(initialState.A, convertedState.A);
             Assert.Equal(initialState.B, convertedState.B);
@@ -166,8 +166,8 @@ namespace AWSUtils.Tests.StorageTests
 
         private async Task<DynamoDBGrainStorage> InitDynamoDBGrainStorage(DynamoDBStorageOptions options)
         {
-            DynamoDBGrainStorage store = ActivatorUtilities.CreateInstance<DynamoDBGrainStorage>(this.providerRuntime.ServiceProvider, options);
-            ISiloLifecycleSubject lifecycle = ActivatorUtilities.CreateInstance<SiloLifecycleSubject>(this.providerRuntime.ServiceProvider, new LifecycleSubject(null));
+            DynamoDBGrainStorage store = ActivatorUtilities.CreateInstance<DynamoDBGrainStorage>(this.providerRuntime.ServiceProvider, "StorageProviderTests", options);
+            ISiloLifecycleSubject lifecycle = ActivatorUtilities.CreateInstance<SiloLifecycleSubject>(this.providerRuntime.ServiceProvider, NullLogger<SiloLifecycleSubject>.Instance);
             store.Participate(lifecycle);
             await lifecycle.OnStart();
             return store;
@@ -176,7 +176,7 @@ namespace AWSUtils.Tests.StorageTests
         private Task<DynamoDBGrainStorage> InitDynamoDBGrainStorage(bool useJson = false)
         {
             var options = new DynamoDBStorageOptions
-            {                
+            {
                 Service = AWSTestConstants.Service,
                 UseJson = useJson
             };

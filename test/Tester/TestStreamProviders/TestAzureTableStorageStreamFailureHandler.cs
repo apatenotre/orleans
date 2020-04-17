@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos.Table;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.WindowsAzure.Storage.Table;
+using Orleans.Persistence.AzureStorage;
 using Orleans.Providers.Streams.PersistentStreams;
 using Orleans.Serialization;
 using Orleans.Streams;
 using TestExtensions;
-using Orleans.Persistence.AzureStorage;
 
 namespace Tester.TestStreamProviders
 {
@@ -31,7 +31,7 @@ namespace Tester.TestStreamProviders
 
         public static async Task<int> GetDeliveryFailureCount(string streamProviderName, ILoggerFactory loggerFactory)
         {
-            var dataManager = new AzureTableDataManager<TableEntity>(TableName, TestDefaultConfiguration.DataConnectionString, loggerFactory);
+            var dataManager = new AzureTableDataManager<TableEntity>(TableName, TestDefaultConfiguration.DataConnectionString, loggerFactory.CreateLogger<AzureTableDataManager<TableEntity>>());
             await dataManager.InitTableAsync();
             IEnumerable<Tuple<TableEntity, string>> deliveryErrors =
                 await
@@ -42,7 +42,7 @@ namespace Tester.TestStreamProviders
 
         public static async Task DeleteAll()
         {
-            var dataManager = new AzureTableDataManager<TableEntity>(TableName, TestDefaultConfiguration.DataConnectionString, NullLoggerFactory.Instance);
+            var dataManager = new AzureTableDataManager<TableEntity>(TableName, TestDefaultConfiguration.DataConnectionString, NullLoggerFactory.Instance.CreateLogger<AzureTableDataManager<TableEntity>>());
             await dataManager.InitTableAsync();
             await dataManager.DeleteTableAsync();
         }
